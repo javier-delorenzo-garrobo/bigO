@@ -1,0 +1,22 @@
+# Excluir ficheros de compilación de Python
+**/__pycache__
+**/*.pyc
+*.pyo
+
+# Excluir entornos virtuales
+env/
+venv/
+.env/
+.venv/
+
+# Excluir ficheros de Git
+.git/
+.gitignore
+
+# Excluir tests y ejemplos (no son necesarios en producción)
+tests/
+examples/
+setup.sh
+
+# Documentación
+*.md

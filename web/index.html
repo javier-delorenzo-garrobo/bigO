@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="bigO: Analiza la complejidad algorítmica de tu código fuente al instante. Soporta Python, C, Java y JavaScript.">
+    <title>bigO — Complexity Analyzer</title>
+
+    <!-- Tipografías: Outfit para UI, JetBrains Mono para código -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- ─── Fondo animado con partículas ─── -->
+    <div class="bg-effects">
+        <div class="bg-orb bg-orb--1"></div>
+        <div class="bg-orb bg-orb--2"></div>
+        <div class="bg-orb bg-orb--3"></div>
+    </div>
+
+    <main class="container">
+        <!-- ─── Cabecera ─── -->
+        <header class="header" id="header">
+            <div class="header__main">
+                <h1 class="header__title">bigO</h1>
+            </div>
+            <p class="header__subtitle">Pega tu código y descubre su complejidad algorítmica al instante</p>
+        </header>
+
+        <!-- ─── Layout Dashboard ─── -->
+        <div class="dashboard-grid">
+            <!-- ─── Panel principal ─── -->
+            <div class="panel" id="main-panel">
+            <!-- Selector de lenguaje -->
+            <div class="lang-selector" id="lang-selector">
+                <button class="lang-btn lang-btn--active" data-ext=".py" id="btn-python">
+                    <span class="lang-btn__icon">🐍</span>
+                    <span class="lang-btn__label">Python</span>
+                </button>
+                <button class="lang-btn" data-ext=".c" id="btn-c">
+                    <span class="lang-btn__icon">⚙️</span>
+                    <span class="lang-btn__label">C</span>
+                </button>
+                <button class="lang-btn" data-ext=".java" id="btn-java">
+                    <span class="lang-btn__icon">☕</span>
+                    <span class="lang-btn__label">Java</span>
+                </button>
+                <button class="lang-btn" data-ext=".js" id="btn-js">
+                    <span class="lang-btn__icon">🟨</span>
+                    <span class="lang-btn__label">JavaScript</span>
+                </button>
+            </div>
+
+            <!-- Editor de código -->
+            <div class="editor" id="editor">
+                <div class="editor__header">
+                    <div class="editor__dots">
+                        <span class="dot dot--red"></span>
+                        <span class="dot dot--yellow"></span>
+                        <span class="dot dot--green"></span>
+                    </div>
+                    <span class="editor__filename" id="editor-filename">código.py</span>
+                    <button class="editor__upload-btn" id="upload-btn" title="Cargar fichero">
+                        📁 Cargar fichero
+                    </button>
+                    <input type="file" id="file-input" accept=".py,.c,.h,.java,.js" hidden>
+                </div>
+                <div class="editor__body" id="editor-body">
+                    <div class="editor__lines" id="line-numbers" aria-hidden="true">1</div>
+                    <textarea
+                        class="editor__textarea"
+                        id="code-input"
+                        spellcheck="false"
+                        autocomplete="off"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        placeholder="Pega tu código aquí o arrastra un fichero..."
+                    ></textarea>
+                </div>
+            </div>
+
+            <!-- Drop zone overlay -->
+            <div class="dropzone" id="dropzone">
+                <div class="dropzone__content">
+                    <span class="dropzone__icon">📄</span>
+                    <span class="dropzone__text">Suelta el fichero aquí</span>
+                </div>
+            </div>
+
+            <!-- Botón de análisis -->
+            <button class="analyze-btn" id="analyze-btn">
+                <span class="analyze-btn__icon">🔍</span>
+                <span class="analyze-btn__text">Analizar complejidad</span>
+            </button>
+        </div>
+
+        <!-- ─── Panel de resultados ─── -->
+        <div class="results hidden" id="results-panel">
+            <div class="results__header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 class="results__title" style="margin: 0;">Resultado del análisis</h2>
+                <div class="metric-card" style="margin: 0; padding: 0.5rem 1rem;">
+                    <span class="metric-card__icon">💻</span>
+                    <span class="metric-card__value" id="result-language">—</span>
+                </div>
+            </div>
+
+            <div id="functions-container" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Las tarjetas de funciones se inyectarán aquí -->
+            </div>
+        </div>
+
+        <!-- ─── Panel de error ─── -->
+        <div class="error-panel hidden" id="error-panel">
+            <span class="error-panel__icon">⚠️</span>
+            <span class="error-panel__message" id="error-message"></span>
+        </div>
+
+        <!-- ─── Footer ─── -->
+        <footer class="footer" id="footer">
+            <p>Hecho con 💻 — Solo usa la biblioteca estándar de Python</p>
+            <p class="footer__extensions">Extensiones soportadas: .py  .c  .h  .java  .js</p>
+        </footer>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

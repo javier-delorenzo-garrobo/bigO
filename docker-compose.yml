@@ -1,0 +1,14 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bigo-web
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    
+    # Opcional: Si quieres desarrollar localmente y ver los cambios sin reconstruir la imagen,
+    # descomenta las siguientes líneas:
+    # volumes:
+    #   - .:/app
