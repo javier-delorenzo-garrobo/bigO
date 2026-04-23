@@ -8,9 +8,11 @@
 # implementar `analyze()` para extraer métricas del código.
 # ─────────────────────────────────────────────────────────────
 
+import bisect
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from functools import lru_cache
 
 
 @dataclass
@@ -41,10 +43,17 @@ _SUPERSCRIPTS: dict[int, str] = {
     5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹",
 }
 
+_BRACELESS_LOOP_PATTERN = re.compile(r"\b(for|while|do)\b")
+
 
 def _superscript(n: int) -> str:
     """Convierte un entero positivo a su representación en superíndice Unicode."""
     return "".join(_SUPERSCRIPTS[int(d)] for d in str(n))
+
+
+@lru_cache(maxsize=512)
+def _recursive_call_pattern(func_name: str) -> re.Pattern[str]:
+    return re.compile(rf"(?:\bthis\s*\.\s*)?\b{re.escape(func_name)}\s*\(")
 
 
 class BaseAnalyzer(ABC):
@@ -159,8 +168,22 @@ class BaseAnalyzer(ABC):
 
     def _detect_recursion_in_body(self, body: str, func_name: str) -> bool:
         """Comprueba si el cuerpo contiene una llamada a su propio nombre."""
-        call_pattern = re.compile(rf"(?:\bthis\s*\.\s*)?\b{re.escape(func_name)}\s*\(")
+        call_pattern = _recursive_call_pattern(func_name)
         return bool(call_pattern.search(body))
+
+    @staticmethod
+    def _build_line_starts(source: str) -> list[int]:
+        """Construye una tabla de offset inicial por línea para búsquedas rápidas."""
+        starts = [0]
+        for idx, char in enumerate(source):
+            if char == "\n":
+                starts.append(idx + 1)
+        return starts
+
+    @staticmethod
+    def _line_index_from_pos(line_starts: list[int], pos: int) -> int:
+        """Convierte un offset absoluto de texto en índice de línea (0-based)."""
+        return bisect.bisect_right(line_starts, pos) - 1
 
     @staticmethod
     def _extract_body(source: str, brace_pos: int) -> str:
@@ -182,7 +205,7 @@ class BaseAnalyzer(ABC):
         lines = source.splitlines()
         for i, line in enumerate(lines):
             stripped = line.strip()
-            if re.search(r"\b(for|while|do)\b", stripped):
+            if _BRACELESS_LOOP_PATTERN.search(stripped):
                 if not stripped.endswith("{"):
                     # Comprobar la siguiente línea no vacía
                     for j in range(i + 1, len(lines)):

@@ -19,6 +19,26 @@ class BaseTestAnalyzer(unittest.TestCase):
             if result:
                 self.assertEqual(result.complexity, expected_complexity)
 
+    def _run_source_test(
+        self,
+        extension: str,
+        source_code: str,
+        expected_by_function: dict[str, str],
+    ) -> None:
+        analyzer_info = get_analyzer(extension)
+        self.assertIsNotNone(analyzer_info, f"No hay analizador para {extension}")
+        if analyzer_info:
+            analyzer, _ = analyzer_info
+            analysis_results = analyzer.estimate_complexity(source_code)
+            by_name = {result.function_name: result for result in analysis_results}
+            for func_name, expected_complexity in expected_by_function.items():
+                self.assertIn(
+                    func_name,
+                    by_name,
+                    f"No se detectó la función '{func_name}' para extensión {extension}",
+                )
+                self.assertEqual(by_name[func_name].complexity, expected_complexity)
+
 
 class TestCAnalyzer(BaseTestAnalyzer):
     def test_constant(self) -> None:
@@ -192,6 +212,193 @@ function normalFunc() {
             results = analyzer.estimate_complexity(source)
             self.assertEqual(len(results), 1)
             self.assertEqual(results[0].function_name, "normalFunc")
+
+
+class TestDiverseCodeBank(BaseTestAnalyzer):
+    def test_python_snippets_bank(self) -> None:
+        cases = [
+            (
+                "python_global_without_functions",
+                """
+for i in range(5):
+    print(i)
+""",
+                {"Global": "O(n)"},
+            ),
+            (
+                "python_nested_function_not_counted_in_outer",
+                """
+def outer(nums):
+    for _ in nums:
+        pass
+
+    def inner(m):
+        for i in m:
+            for j in m:
+                pass
+
+    return len(nums)
+""",
+                {"outer": "O(n)", "inner": "O(n²)"},
+            ),
+            (
+                "python_recursion_with_loop",
+                """
+def process(n):
+    for _ in range(n):
+        pass
+    if n <= 1:
+        return 1
+    return process(n - 1)
+""",
+                {"process": "O(n)"},
+            ),
+        ]
+
+        for case_name, source_code, expected in cases:
+            with self.subTest(case=case_name):
+                self._run_source_test(".py", source_code, expected)
+
+    def test_c_snippets_bank(self) -> None:
+        cases = [
+            (
+                "c_functions_with_different_orders",
+                """
+int constant() {
+    return 1;
+}
+
+int linear(int n) {
+    for (int i = 0; i < n; i++) {
+    }
+    return n;
+}
+
+int quadratic(int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+        }
+    }
+    return n;
+}
+""",
+                {"constant": "O(1)", "linear": "O(n)", "quadratic": "O(n²)"},
+            ),
+            (
+                "c_recursion_plus_loop",
+                """
+int walk(int n) {
+    for (int i = 0; i < n; i++) {
+    }
+    if (n <= 0) {
+        return 0;
+    }
+    return walk(n - 1);
+}
+""",
+                {"walk": "O(n)"},
+            ),
+        ]
+
+        for case_name, source_code, expected in cases:
+            with self.subTest(case=case_name):
+                self._run_source_test(".c", source_code, expected)
+
+    def test_java_snippets_bank(self) -> None:
+        cases = [
+            (
+                "java_class_methods_varied",
+                """
+public class Sample {
+    public int base(int a) {
+        return a;
+    }
+
+    public int linear(int n) {
+        for (int i = 0; i < n; i++) {
+        }
+        return n;
+    }
+
+    public int cubic(int n) {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                for (int k = 0; k < n; k++) {
+                }
+            }
+        }
+        return n;
+    }
+}
+""",
+                {"base": "O(1)", "linear": "O(n)", "cubic": "O(n³)"},
+            ),
+            (
+                "java_recursive_with_loop",
+                """
+public class Rec {
+    public int go(int n) {
+        for (int i = 0; i < n; i++) {
+        }
+        if (n <= 1) {
+            return 1;
+        }
+        return go(n - 1);
+    }
+}
+""",
+                {"go": "O(n)"},
+            ),
+        ]
+
+        for case_name, source_code, expected in cases:
+            with self.subTest(case=case_name):
+                self._run_source_test(".java", source_code, expected)
+
+    def test_js_snippets_bank(self) -> None:
+        cases = [
+            (
+                "js_function_and_arrow",
+                """
+function constant() {
+    return 1;
+}
+
+const linear = (n) => {
+    for (let i = 0; i < n; i++) {
+    }
+    return n;
+};
+
+const square = function(n) {
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+        }
+    }
+    return n;
+};
+""",
+                {"constant": "O(1)", "linear": "O(n)", "square": "O(n²)"},
+            ),
+            (
+                "js_recursion_plus_loop",
+                """
+function walk(n) {
+    for (let i = 0; i < n; i++) {
+    }
+    if (n <= 1) {
+        return 1;
+    }
+    return walk(n - 1);
+}
+""",
+                {"walk": "O(n)"},
+            ),
+        ]
+
+        for case_name, source_code, expected in cases:
+            with self.subTest(case=case_name):
+                self._run_source_test(".js", source_code, expected)
 
 
 if __name__ == "__main__":

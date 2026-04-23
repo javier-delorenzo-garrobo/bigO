@@ -38,6 +38,7 @@ class JavaScriptAnalyzer(BaseAnalyzer):
         """Analiza código JavaScript usando regex para estimar métricas por función."""
         clean = self._strip_comments(source_code)
         source_lines = source_code.splitlines()
+        line_starts = self._build_line_starts(clean)
         results = []
 
         for pattern in self._FUNC_PATTERNS:
@@ -45,7 +46,7 @@ class JavaScriptAnalyzer(BaseAnalyzer):
                 func_name = match.group(1)
                 
                 func_name_start = match.start(1)
-                line_idx = clean[:func_name_start].count("\n")
+                line_idx = self._line_index_from_pos(line_starts, func_name_start)
                 preceding_line = source_lines[line_idx - 1] if line_idx > 0 else ""
                 
                 original_body = self._extract_body(source_code, match.end() - 1)

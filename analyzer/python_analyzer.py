@@ -13,6 +13,21 @@ import ast
 from analyzer.base_analyzer import BaseAnalyzer, FunctionAnalysis
 
 
+class _FunctionCollector(ast.NodeVisitor):
+    """Recoge definiciones de función evitando recorrer nodos irrelevantes."""
+
+    def __init__(self) -> None:
+        self.functions: list[ast.FunctionDef | ast.AsyncFunctionDef] = []
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self.functions.append(node)
+        self.generic_visit(node)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        self.functions.append(node)
+        self.generic_visit(node)
+
+
 class PythonAnalyzer(BaseAnalyzer):
     """Analizador de complejidad para Python basado en AST."""
 
@@ -25,25 +40,26 @@ class PythonAnalyzer(BaseAnalyzer):
 
         source_lines = source_code.splitlines()
         results = []
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                preceding_line_idx = node.lineno - 2
-                preceding_line = source_lines[preceding_line_idx] if 0 <= preceding_line_idx < len(source_lines) else ""
-                
-                end_lineno = getattr(node, "end_lineno", len(source_lines))
-                body_lines = source_lines[node.lineno:end_lineno]
-                body_text = "\n".join(body_lines)
-                
-                if self._is_ignored(body_text, preceding_line):
-                    continue
-                
-                max_depth = self._max_loop_depth(node)
-                is_recursive = self._detect_recursion(node)
-                results.append(FunctionAnalysis(
-                    name=node.name,
-                    max_depth=max_depth,
-                    is_recursive=is_recursive
-                ))
+        collector = _FunctionCollector()
+        collector.visit(tree)
+        for node in collector.functions:
+            preceding_line_idx = node.lineno - 2
+            preceding_line = source_lines[preceding_line_idx] if 0 <= preceding_line_idx < len(source_lines) else ""
+
+            end_lineno = getattr(node, "end_lineno", len(source_lines))
+            body_lines = source_lines[node.lineno:end_lineno]
+            body_text = "\n".join(body_lines)
+
+            if self._is_ignored(body_text, preceding_line):
+                continue
+
+            max_depth = self._max_loop_depth(node)
+            is_recursive = self._detect_recursion(node)
+            results.append(FunctionAnalysis(
+                name=node.name,
+                max_depth=max_depth,
+                is_recursive=is_recursive
+            ))
 
         # Si no hay funciones, analizamos a nivel global
         if not results:
