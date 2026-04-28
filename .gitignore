@@ -58,7 +58,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
+.codex
 # IDEs / Editors / Tooling
 .vscode/
 .idea/

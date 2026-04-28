@@ -171,6 +171,44 @@ class BaseAnalyzer(ABC):
         call_pattern = _recursive_call_pattern(func_name)
         return bool(call_pattern.search(body))
 
+    def _analyze_with_patterns(
+        self,
+        source_code: str,
+        patterns: list[re.Pattern[str]],
+    ) -> list[FunctionAnalysis]:
+        """Aplica el flujo común de análisis para lenguajes basados en regex."""
+        clean = self._strip_comments(source_code)
+        source_lines = source_code.splitlines()
+        line_starts = self._build_line_starts(clean)
+        results = []
+
+        for pattern in patterns:
+            for match in pattern.finditer(clean):
+                func_name = match.group(1)
+
+                func_name_start = match.start(1)
+                line_idx = self._line_index_from_pos(line_starts, func_name_start)
+                preceding_line = source_lines[line_idx - 1] if line_idx > 0 else ""
+
+                original_body = self._extract_body(source_code, match.end() - 1)
+                if self._is_ignored(original_body, preceding_line):
+                    continue
+
+                clean_body = self._extract_body(clean, match.end() - 1)
+                max_depth = self._max_loop_depth(clean_body)
+                is_recursive = self._detect_recursion_in_body(clean_body, func_name)
+
+                results.append(
+                    FunctionAnalysis(
+                        name=func_name,
+                        max_depth=max_depth,
+                        is_recursive=is_recursive,
+                        body=clean_body,
+                    )
+                )
+
+        return results
+
     @staticmethod
     def _build_line_starts(source: str) -> list[int]:
         """Construye una tabla de offset inicial por línea para búsquedas rápidas."""
